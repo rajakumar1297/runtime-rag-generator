@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Runtime RAG Generator - Upload documents and ask AI-powered questions with grounded answers">
+    <title>RAG Generator — Runtime Knowledge Base</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* ========== CSS Reset & Variables ========== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #1f2747;
+            --bg-input: #151b30;
+
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+
+            --accent-primary: #6366f1;
+            --accent-primary-hover: #818cf8;
+            --accent-secondary: #8b5cf6;
+            --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa);
+            --accent-glow: rgba(99, 102, 241, 0.15);
+
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.1);
+            --warning: #f59e0b;
+            --warning-bg: rgba(245, 158, 11, 0.1);
+            --error: #ef4444;
+            --error-bg: rgba(239, 68, 68, 0.1);
+
+            --border: rgba(148, 163, 184, 0.08);
+            --border-hover: rgba(148, 163, 184, 0.15);
+
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
+
+            --transition-fast: 0.15s ease;
+            --transition-base: 0.25s ease;
+            --transition-slow: 0.4s ease;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ========== Background Effects ========== */
+        .bg-effects {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-effects::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            left: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .bg-effects::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.06) 0%, transparent 70%);
+            animation: float 25s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(30px, -30px); }
+            66% { transform: translate(-20px, 20px); }
+        }
+
+        /* ========== Layout ========== */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            min-height: 100vh;
+        }
+
+        /* ========== Header ========== */
+        .header {
+            text-align: center;
+            padding: 40px 0 32px;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: var(--accent-glow);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--accent-primary-hover);
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .header-badge .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* ========== Main Grid ========== */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 24px;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ========== Cards ========== */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            transition: border-color var(--transition-base);
+        }
+
+        .card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .card-title .icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent-glow);
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+        }
+
+        /* ========== Sidebar ========== */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ========== Upload Section ========== */
+        .upload-zone {
+            border: 2px dashed rgba(99, 102, 241, 0.2);
+            border-radius: var(--radius-md);
+            padding: 32px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            background: rgba(99, 102, 241, 0.03);
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .upload-zone .upload-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+            opacity: 0.8;
+        }
+
+        .upload-zone .upload-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .upload-zone .upload-formats {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .file-list {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--bg-input);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+        }
+
+        .file-item .file-name {
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 200px;
+        }
+
+        .file-item .file-size {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .file-item .remove-btn {
+            background: none;
+            border: none;
+            color: var(--error);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0 4px;
+            opacity: 0.7;
+            transition: opacity var(--transition-fast);
+        }
+
+        .file-item .remove-btn:hover {
+            opacity: 1;
+        }
+
+        /* ========== Form Elements ========== */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 14px;
+            transition: all var(--transition-fast);
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        select.form-input {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 32px;
+        }
+
+        /* ========== Buttons ========== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            outline: none;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background: var(--error-bg);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* ========== Collections List ========== */
+        .collections-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .collection-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            background: var(--bg-input);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border: 1px solid transparent;
+        }
+
+        .collection-item:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .collection-item.active {
+            border-color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .collection-item .col-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .collection-item .col-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .collection-item .col-count {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .collection-item .col-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .empty-state .empty-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+            opacity: 0.5;
+        }
+
+        /* ========== Chat Area ========== */
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 200px);
+            min-height: 500px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--bg-card-hover) transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: var(--bg-card-hover);
+            border-radius: 3px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            animation: messageIn 0.3s ease;
+        }
+
+        @keyframes messageIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .message.user .message-avatar {
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        .message.assistant .message-avatar {
+            background: rgba(139, 92, 246, 0.15);
+        }
+
+        .message-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .message-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .message-text {
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text-primary);
+            background: var(--bg-input);
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            word-wrap: break-word;
+        }
+
+        .message-text p {
+            margin-bottom: 8px;
+        }
+
+        .message-text p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message.assistant .message-text {
+            background: rgba(139, 92, 246, 0.06);
+            border: 1px solid rgba(139, 92, 246, 0.1);
+        }
+
+        /* Sources */
+        .sources-section {
+            margin-top: 10px;
+        }
+
+        .sources-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--accent-primary-hover);
+            cursor: pointer;
+            padding: 4px 0;
+            border: none;
+            background: none;
+            font-family: inherit;
+            font-weight: 500;
+        }
+
+        .sources-toggle:hover {
+            color: var(--accent-primary);
+        }
+
+        .sources-list {
+            margin-top: 8px;
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .sources-list.show {
+            display: flex;
+        }
+
+        .source-item {
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--accent-primary);
+        }
+
+        .source-item .source-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-primary-hover);
+            margin-bottom: 4px;
+        }
+
+        .source-item .source-preview {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Welcome message */
+        .welcome-message {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .welcome-message .welcome-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+
+        .welcome-message h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .welcome-message p {
+            font-size: 14px;
+            color: var(--text-muted);
+            max-width: 400px;
+            line-height: 1.6;
+        }
+
+        .welcome-steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 24px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .welcome-step {
+            padding: 16px;
+            background: var(--bg-input);
+            border-radius: var(--radius-md);
+            text-align: center;
+        }
+
+        .welcome-step .step-number {
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent-gradient);
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .welcome-step .step-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Chat Input */
+        .chat-input-area {
+            margin-top: 16px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input-area .form-input {
+            flex: 1;
+            padding: 12px 16px;
+        }
+
+        .chat-input-area .btn {
+            width: auto;
+            padding: 12px 24px;
+        }
+
+        /* ========== Loading Spinner ========== */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 14px 18px;
+            background: rgba(139, 92, 246, 0.06);
+            border: 1px solid rgba(139, 92, 246, 0.1);
+            border-radius: var(--radius-md);
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-secondary);
+            border-radius: 50%;
+            animation: typing 1.4s ease-in-out infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-6px); opacity: 1; }
+        }
+
+        /* ========== Alerts / Toasts ========== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            padding: 12px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 3.7s;
+            animation-fill-mode: forwards;
+            max-width: 400px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .toast.success {
+            background: var(--success-bg);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .toast.error {
+            background: var(--error-bg);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .toast.info {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--accent-primary-hover);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes toastOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-effects"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-badge">
+                <span class="dot"></span>
+                Runtime RAG
+            </div>
+            <h1>RAG Generator</h1>
+            <p>Upload any document set and instantly ask AI-powered questions with source-grounded answers.</p>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <!-- Upload Card -->
+                <div class="card" id="upload-card">
+                    <div class="card-title">
+                        <span class="icon">📄</span>
+                        Upload Documents
+                    </div>
+
+                    <div class="form-group">
+                        <label for="collection-name">Collection Name</label>
+                        <input type="text" id="collection-name" class="form-input" placeholder="e.g. project-docs, research-papers" />
+                    </div>
+
+                    <div class="upload-zone" id="upload-zone">
+                        <div class="upload-icon">⬆️</div>
+                        <div class="upload-text">Drop files here or click to browse</div>
+                        <div class="upload-formats">PDF • DOCX • TXT • CSV • MD</div>
+                        <input type="file" id="file-input" multiple accept=".pdf,.docx,.txt,.csv,.md" style="display:none" />
+                    </div>
+
+                    <div class="file-list" id="file-list"></div>
+
+                    <div style="margin-top: 16px;">
+                        <button class="btn btn-primary" id="upload-btn" disabled>
+                            <span id="upload-btn-text">Upload & Index</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Collections Card -->
+                <div class="card">
+                    <div class="card-title">
+                        <span class="icon">📚</span>
+                        Collections
+                        <button class="btn btn-sm" onclick="loadCollections()" style="margin-left:auto; background:var(--bg-input); color:var(--text-secondary); width:auto; border:1px solid var(--border);">↻</button>
+                    </div>
+                    <div class="collections-list" id="collections-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">📂</div>
+                            <div>No collections yet.<br>Upload documents to get started.</div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Chat Area -->
+            <main class="card chat-area">
+                <div class="card-title">
+                    <span class="icon">💬</span>
+                    <span>Ask Questions</span>
+                    <span id="active-collection-badge" style="margin-left:auto; font-size:12px; color:var(--text-muted); font-weight:400;"></span>
+                </div>
+
+                <div class="chat-messages" id="chat-messages">
+                    <div class="welcome-message" id="welcome-message">
+                        <div class="welcome-icon">🔍</div>
+                        <h2>Ready to explore your documents</h2>
+                        <p>Upload documents to a collection, select it, then ask any question. Answers are grounded in your document content.</p>
+                        <div class="welcome-steps">
+                            <div class="welcome-step">
+                                <div class="step-number">1</div>
+                                <div class="step-text">Upload documents</div>
+                            </div>
+                            <div class="welcome-step">
+                                <div class="step-number">2</div>
+                                <div class="step-text">Select collection</div>
+                            </div>
+                            <div class="welcome-step">
+                                <div class="step-number">3</div>
+                                <div class="step-text">Ask questions</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <input type="text" id="question-input" class="form-input" placeholder="Ask a question about your documents..." disabled />
+                    <button class="btn btn-primary" id="ask-btn" disabled>
+                        <span id="ask-btn-text">Ask</span>
+                    </button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        // ========== State ==========
+        let selectedFiles = [];
+        let activeCollection = null;
+        let isQuerying = false;
+
+        // ========== DOM Elements ==========
+        const uploadZone = document.getElementById('upload-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileListEl = document.getElementById('file-list');
+        const collectionNameInput = document.getElementById('collection-name');
+        const uploadBtn = document.getElementById('upload-btn');
+        const uploadBtnText = document.getElementById('upload-btn-text');
+        const collectionsListEl = document.getElementById('collections-list');
+        const chatMessages = document.getElementById('chat-messages');
+        const questionInput = document.getElementById('question-input');
+        const askBtn = document.getElementById('ask-btn');
+        const askBtnText = document.getElementById('ask-btn-text');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const activeBadge = document.getElementById('active-collection-badge');
+
+        // ========== Toast Notifications ==========
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { success: '✓', error: '✕', info: 'ℹ' };
+            toast.innerHTML = `<span>${icons[type] || 'ℹ'}</span> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        // ========== File Upload ==========
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            for (const file of files) {
+                const ext = '.' + file.name.split('.').pop().toLowerCase();
+                if (['.pdf', '.docx', '.txt', '.csv', '.md'].includes(ext)) {
+                    if (!selectedFiles.find(f => f.name === file.name)) {
+                        selectedFiles.push(file);
+                    }
+                } else {
+                    showToast(`Unsupported format: ${ext}`, 'error');
+                }
+            }
+            renderFileList();
+            updateUploadBtn();
+        }
+
+        function renderFileList() {
+            fileListEl.innerHTML = selectedFiles.map((file, i) => `
+                <div class="file-item">
+                    <span class="file-name" title="${file.name}">📎 ${file.name}</span>
+                    <span class="file-size">${formatSize(file.size)}</span>
+                    <button class="remove-btn" onclick="removeFile(${i})">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            renderFileList();
+            updateUploadBtn();
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
+        function updateUploadBtn() {
+            const hasFiles = selectedFiles.length > 0;
+            const hasName = collectionNameInput.value.trim().length > 0;
+            uploadBtn.disabled = !hasFiles || !hasName;
+        }
+
+        collectionNameInput.addEventListener('input', updateUploadBtn);
+
+        // ========== Upload Documents ==========
+        uploadBtn.addEventListener('click', async () => {
+            const collectionName = collectionNameInput.value.trim();
+            if (!collectionName || selectedFiles.length === 0) return;
+
+            uploadBtn.disabled = true;
+            uploadBtnText.innerHTML = '<span class="spinner"></span> Indexing...';
+
+            const formData = new FormData();
+            formData.append('collection_name', collectionName);
+            selectedFiles.forEach(f => formData.append('files', f));
+
+            try {
+                const res = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showToast(`${data.files_processed.length} file(s) indexed — ${data.total_chunks} chunks created`, 'success');
+                    selectedFiles = [];
+                    renderFileList();
+                    fileInput.value = '';
+                    loadCollections();
+                    // Auto-select the collection
+                    selectCollection(data.collection_name);
+                } else {
+                    showToast(data.detail || 'Upload failed', 'error');
+                }
+            } catch (err) {
+                showToast('Network error: ' + err.message, 'error');
+            } finally {
+                uploadBtnText.textContent = 'Upload & Index';
+                updateUploadBtn();
+            }
+        });
+
+        // ========== Collections ==========
+        async function loadCollections() {
+            try {
+                const res = await fetch('/api/collections');
+                const collections = await res.json();
+
+                if (collections.length === 0) {
+                    collectionsListEl.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">📂</div>
+                            <div>No collections yet.<br>Upload documents to get started.</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                collectionsListEl.innerHTML = collections.map(col => `
+                    <div class="collection-item ${activeCollection === col.name ? 'active' : ''}"
+                         onclick="selectCollection('${col.name}')">
+                        <div class="col-info">
+                            <span class="col-name">📚 ${col.name}</span>
+                            <span class="col-count">${col.document_count} chunks</span>
+                        </div>
+                        <div class="col-actions">
+                            <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteCol('${col.name}')" style="width:auto;">✕</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                showToast('Failed to load collections', 'error');
+            }
+        }
+
+        function selectCollection(name) {
+            activeCollection = name;
+            questionInput.disabled = false;
+            askBtn.disabled = false;
+            questionInput.placeholder = `Ask about "${name}"...`;
+            activeBadge.textContent = `Collection: ${name}`;
+            questionInput.focus();
+            loadCollections(); // re-render to show active state
+        }
+
+        async function deleteCol(name) {
+            if (!confirm(`Delete collection "${name}" and all its data?`)) return;
+            try {
+                await fetch(`/api/collections/${name}`, { method: 'DELETE' });
+                showToast(`Collection "${name}" deleted`, 'success');
+                if (activeCollection === name) {
+                    activeCollection = null;
+                    questionInput.disabled = true;
+                    askBtn.disabled = true;
+                    questionInput.placeholder = 'Select a collection first...';
+                    activeBadge.textContent = '';
+                }
+                loadCollections();
+            } catch (err) {
+                showToast('Failed to delete collection', 'error');
+            }
+        }
+
+        // ========== Chat / Q&A ==========
+        function addMessage(role, content, sources = null) {
+            // Hide welcome message
+            if (welcomeMessage) welcomeMessage.style.display = 'none';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+
+            const avatar = role === 'user' ? '👤' : '🤖';
+            const label = role === 'user' ? 'You' : 'RAG Assistant';
+
+            // Simple markdown-like formatting
+            let formattedContent = content
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code style="background:rgba(99,102,241,0.1);padding:1px 5px;border-radius:3px;font-size:13px;">$1</code>');
+            formattedContent = '<p>' + formattedContent + '</p>';
+
+            let sourcesHTML = '';
+            if (sources && sources.length > 0) {
+                const sourceId = 'src-' + Date.now();
+                sourcesHTML = `
+                    <div class="sources-section">
+                        <button class="sources-toggle" onclick="document.getElementById('${sourceId}').classList.toggle('show')">
+                            📋 ${sources.length} source(s) referenced — click to expand
+                        </button>
+                        <div class="sources-list" id="${sourceId}">
+                            ${sources.map(s => `
+                                <div class="source-item">
+                                    <div class="source-name">📄 ${s.filename}</div>
+                                    <div class="source-preview">${s.preview || ''}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">
+                    <div class="message-label">${label}</div>
+                    <div class="message-text">${formattedContent}</div>
+                    ${sourcesHTML}
+                </div>
+            `;
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTyping() {
+            const div = document.createElement('div');
+            div.className = 'message assistant';
+            div.id = 'typing-indicator';
+            div.innerHTML = `
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <div class="message-label">RAG Assistant</div>
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function removeTyping() {
+            const el = document.getElementById('typing-indicator');
+            if (el) el.remove();
+        }
+
+        async function askQuestion() {
+            const question = questionInput.value.trim();
+            if (!question || !activeCollection || isQuerying) return;
+
+            isQuerying = true;
+            askBtn.disabled = true;
+            askBtnText.innerHTML = '<span class="spinner"></span>';
+
+            addMessage('user', question);
+            questionInput.value = '';
+            showTyping();
+
+            try {
+                const res = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        collection_name: activeCollection,
+                        question: question,
+                        num_results: 4,
+                    }),
+                });
+
+                removeTyping();
+                const data = await res.json();
+
+                if (res.ok) {
+                    addMessage('assistant', data.answer, data.sources);
+                } else {
+                    addMessage('assistant', `⚠️ Error: ${data.detail || 'Failed to get answer'}`);
+                }
+            } catch (err) {
+                removeTyping();
+                addMessage('assistant', `⚠️ Network error: ${err.message}`);
+            } finally {
+                isQuerying = false;
+                askBtn.disabled = false;
+                askBtnText.textContent = 'Ask';
+            }
+        }
+
+        askBtn.addEventListener('click', askQuestion);
+        questionInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                askQuestion();
+            }
+        });
+
+        // ========== Initialize ==========
+        loadCollections();
+    </script>
+</body>
+</html>

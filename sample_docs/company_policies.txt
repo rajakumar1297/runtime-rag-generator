@@ -1,0 +1,13 @@
+Acme Global Technologies - Employee Handbook & Benefits Policy (2026)
+
+Section 1: Flexible Remote Work Policy
+Employees in engineering and research roles may work remotely up to 3 days per week with manager approval. Core collaboration hours across all timezones are 10:00 AM to 3:00 PM EST. During these hours, employees are expected to be reachable via Slack and available for synchronous huddles.
+
+Section 2: Annual Learning & Development Stipend
+Every full-time team member receives an annual educational budget of $2,500. This stipend can be applied toward technical certifications, cloud compute credits for research, conference admissions, and relevant technical books. Reimbursements must be submitted through Expensify with receipts attached within 30 days of purchase.
+
+Section 3: Paid Time Off (PTO) and Health Leave
+Acme provides 25 days of standard paid vacation per calendar year, accrued monthly. In addition, 10 dedicated wellness/sick days are allocated upfront on January 1st without requiring medical certification for absences under 3 consecutive days.
+
+Section 4: Equipment and Hardware Refresh
+All engineers receive a company-issued 16-inch laptop (M-series Apple Silicon or equivalent 64GB RAM Linux workstation) refreshed every 24 months. Employees receive a one-time home office setup grant of $800 upon onboarding to purchase ergonomic furniture or external displays.

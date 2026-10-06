@@ -1,0 +1,26 @@
+# Core
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.9
+pydantic==2.9.2
+
+# Document Processing
+pypdf==4.3.1
+python-docx==1.1.2
+openpyxl==3.1.5
+
+# RAG Pipeline
+langchain==0.3.1
+langchain-community==0.3.1
+langchain-openai==0.2.0
+langchain-google-genai==2.0.1
+langchain-text-splitters==0.3.0
+
+# Vector Store
+chromadb==0.5.7
+
+# Embeddings (local, free)
+sentence-transformers==3.1.1
+
+# Environment
+python-dotenv==1.0.1
